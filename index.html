@@ -4,16 +4,107 @@
   <meta charset="utf-8"/>
   <link title="timeline-styles" rel="stylesheet" href="https://cdn.knightlab.com/libs/timeline3/latest/css/timeline.css">
   <script src="https://cdn.knightlab.com/libs/timeline3/latest/js/timeline.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
+  <script src="https://sobach.github.io/msk_bomb_hoax/topojson.v1.min.js"></script>
   <style>
   html {
     font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+    overflow-x: hidden;
+    bottom:0;
+    top:0;
+    left:0;
+    right:0;
+    margin:0;
+  }
+  path.area {
+    fill:none;
+    stroke:rgb(0,0,0);
+    stroke-width:.5;
+  }
+
+  path.water {
+    fill:rgb(2,16,25);
+    stroke-width:0;
+  }
+
+  path.rr_background {
+    fill:none;
+    stroke:rgb(0,0,0);
+  }
+
+  path.rr_foreground {
+    fill:none;
+    stroke-dasharray:4,4;
+    stroke:rgb(0,144,174);
+  }
+
+  path.road1 {
+    fill:none;
+    stroke:rgb(0,144,174);
+  }
+
+  path.road1_foregr {
+    fill:none;
+    stroke:rgb(0,0,0);
   }
   </style>
 </head>
 <body>
   <h1>Hello world!</h1>
-  <div id='timeline-embed' style="width: 100%; height: 400px"></div>
+  <div id="timeline-embed" style="width: 100%; height: 400px"></div>
+  <div id="map" style="width: 100%"></div>
   <script type="text/javascript">
+    function Map(config) {
+      var self = this;
+      
+
+      this.configure = function (config) {
+        this.config = typeof config !== 'undefined' ? config : {};
+        //this.config.placeholder = typeof this.config.placeholder !== 'undefined' ? this.config.placeholder : 'body';
+        this.config.width = typeof this.config.width !== 'undefined' ? this.config.width : window.innerWidth;
+        this.config.height = typeof this.config.height !== 'undefined' ? this.config.height : this.config.width * 1.2;
+        this.config.map = typeof this.config.map !== 'undefined' ? this.config.map : "https://sobach.github.io/msk_bomb_hoax/map3.topojson";
+      }
+
+      this.render = function () {
+        var that = this;
+        var projection = d3.geo.mercator();
+        var path = d3.geo.path().projection(projection);
+        var plot = d3.select("div#map").append("svg")
+          .attr("width", that.config.width)
+          .attr("height", that.config.height);
+
+        var g = plot.append("g")
+          .attr("id", "map");
+
+        d3.json(that.config.map, function(error, map) {
+          if (error) return console.error(error);
+          var boundaries = topojson.feature(map, map.objects.boundaries);
+
+          projection.scale(1).translate([0, 0]);
+
+          var b = path.bounds(boundaries),
+            s = that.config.width / (b[1][0] - b[0][0]),
+            t = [(that.config.width - s * (b[1][0] + b[0][0])) / 2 - 150, (that.config.height - s * (b[1][1] + b[0][1])) / 2 + 100];
+          projection.scale(s).translate(t);
+          g.append("path").datum(boundaries).attr("d", path).classed("area", true).style("z-index", 2);
+          g.append("path").datum(topojson.mesh(map, map.objects.water)).attr("d", path).classed("water", true).style("z-index", 2);
+          //g.append("path").datum(topojson.mesh(map, map.objects.water2)).attr("d", path).classed("water", true).style("z-index", 2);
+          g.append("path").datum(topojson.mesh(map, map.objects.railroad)).attr("d", path).classed("rr_background", true).classed("width_oneandhalf", true).style("z-index", 2);
+          g.append("path").datum(topojson.mesh(map, map.objects.railroad2)).attr("d", path).classed("rr_background", true).classed("width_oneandhalf", true).style("z-index", 2);
+          g.append("path").datum(topojson.mesh(map, map.objects.railroad)).attr("d", path).classed("rr_foreground", true).classed("width_one", true).style("z-index", 2);
+          g.append("path").datum(topojson.mesh(map, map.objects.railroad2)).attr("d", path).classed("rr_foreground", true).classed("width_one", true).style("z-index", 2);
+          g.append("path").datum(topojson.mesh(map, map.objects.road21)).attr("d", path).classed("road1", true).classed("width_two", true).style("z-index", 2);
+          g.append("path").datum(topojson.mesh(map, map.objects.road21)).attr("d", path).classed("road1_foregr", true).classed("width_oneandhalf", true).style("z-index", 2);
+          g.append("path").datum(topojson.mesh(map, map.objects.road1)).attr("d", path).classed("road1", true).classed("width_two", true).style("z-index", 2);
+          g.append("path").datum(topojson.mesh(map, map.objects.road1)).attr("d", path).classed("road1_foregr", true).classed("width_oneandhalf", true).style("z-index", 2);
+        }); 
+      }
+
+      this.configure(config);
+    }
+
+
     var additionalOptions = {
       timenav_height: 100,
       lang :"ru",
@@ -21,10 +112,14 @@
       initial_zoom:0,
       scale:"day"
     }
+    
     timeline = new TL.Timeline('timeline-embed',
       'https://docs.google.com/spreadsheets/d/1WDReAlPQmqD2c-ZaFRZ3cHv2u4JXSYa8lBDZA7FG2gw/pubhtml',
       additionalOptions
     );
+
+    map = new Map({placeholder:"div#map"});
+    map.render();
   </script>
 </body>
 </html>
