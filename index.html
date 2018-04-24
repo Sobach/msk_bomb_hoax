@@ -3,7 +3,6 @@
 <head>
   <meta charset="utf-8"/>
   <link title="timeline-styles" rel="stylesheet" href="https://cdn.knightlab.com/libs/timeline3/latest/css/timeline.css">
-  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
   <script src="https://cdn.knightlab.com/libs/timeline3/latest/js/timeline.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
   <script src="https://sobach.github.io/msk_bomb_hoax/topojson.v1.min.js"></script>
@@ -49,10 +48,26 @@
     stroke:rgba(87,87,87,.2);
   }
 
+  #wrapper {
+    text-align: center;
+  }
+  #yourdiv {
+    width: 70%;
+    display: inline-block;
+  }
   </style>
 </head>
 <body>
-  <h1>Hello world!</h1>
+  <div id="wrapper">    
+    <div id="yourdiv">
+<h1>Проверяем теорему Томаса</h1>
+<h2>&mdash; If men define situations as real, they are real in their consequences.</h2>
+<p>Во второй половине 2017 года на Россию обрушилась волна звонков о массовых "минированиях". Журналисты и сетевая общественность следила за новостями, подсчитывала ущерб для задействованных в проверках спецслужб и думала, как можно наказать хулиганов. Одной из главных целей телефонных террористов стала Москва. "Атаки" шли волнами. В определенные дни - затишье, в другие - удар по (видимо) заранее согласованным целям.</p>
+<p>Если верить <a href="https://ru.wikipedia.org/wiki/Томас,_Уильям_Айзек">У.А. Томасу</a>, люди, воспринявшие как реальность угрозы взрывов, должны были увеличить нагрузку на специальные службы. Уже без участия телефонных хулиганов. Ухудшение самочувствия/проблемы при эвакуации/общее повышение бдительности.</p>
+<p>Чтобы проверить эту теорию, мы сопоставили наиболее активные даты "минирования" с картой звонков в службы спасения. На таймлайне ниже представлены основные дни "фейково-телефонной" атаки. Размер точек на карте под таймлайном соотносится с общим числом вызовов специальных служб в конкретный день. Цветом мы закодировали превышение количества звонков над средним за полгода (чем "краснее", тем больше).</p>      
+    </div>
+</div>
+  
   <div id="timeline-embed" style="width: 100%; height: 400px"></div>
   <div id="map" style="width: 100%"></div>
   <script type="text/javascript">
@@ -74,6 +89,12 @@
         var plot = d3.select("div#map").append("svg")
           .attr("width", that.config.width)
           .attr("height", that.config.height);
+
+        plot.append("text")
+          .attr("x", 10)
+          .attr("y", that.config.height - 10)
+          .style("fill", "#575756")
+          .text("Авторы: @sobach / @NataBrainwashing; Иконка бомбы: Created by Nikita Kozin from the Noun Project");
 
         that.g = plot.append("g")
           .attr("id", "map");
@@ -170,20 +191,34 @@
       scale:"day"
     }
     
-    
-    timeline = new TL.Timeline('timeline-embed',
-      'https://docs.google.com/spreadsheets/d/1WDReAlPQmqD2c-ZaFRZ3cHv2u4JXSYa8lBDZA7FG2gw/pubhtml',
-      additionalOptions
-    );
-    
-    map = new Map({placeholder:"div#map"});
+    d3.json("https://sobach.github.io/msk_bomb_hoax/timeline.json", function(error, timeline_json) {
+      if (error) return console.error(error);
+      console.log(timeline_json);
+      window.timeline = new TL.Timeline('timeline-embed',
+        timeline_json,
+        additionalOptions
+      );
 
-    timeline.on("change", function() {
+      setTimeout(
+        function(){
+          d = window.timeline.getDataById(window.timeline.current_id).start_date.data;
+          date = typeof d !== 'undefined' ? `${d.year.padStart(4, "0")}-${d.month.padStart(2, "0")}-${d.day.padStart(2, "0")}` : "0000-00-00";
+          map.draw_data(date);          
+        }, 2000
+      );
+
+      window.timeline.on("change", function() {
         tl = this;
         d = tl.getDataById(tl.current_id).start_date.data;
         date = typeof d !== 'undefined' ? `${d.year.padStart(4, "0")}-${d.month.padStart(2, "0")}-${d.day.padStart(2, "0")}` : "0000-00-00";
         map.draw_data(date);
-    });
+       });
+    })
+
+    map = new Map({placeholder:"div#map"});
+
+    
+   
   </script>
 </body>
 </html>
