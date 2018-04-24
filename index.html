@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <link title="timeline-styles" rel="stylesheet" href="https://cdn.knightlab.com/libs/timeline3/latest/css/timeline.css">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
   <script src="https://cdn.knightlab.com/libs/timeline3/latest/js/timeline.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
   <script src="https://sobach.github.io/msk_bomb_hoax/topojson.v1.min.js"></script>
@@ -18,35 +19,36 @@
   }
   path.area {
     fill:none;
-    stroke:rgb(0,0,0);
+    stroke:rgba(87,87,87,.2);
     stroke-width:.5;
   }
 
   path.water {
-    fill:rgb(2,16,25);
+    fill:rgba(147,213,246,.2);
     stroke-width:0;
   }
 
   path.rr_background {
     fill:none;
-    stroke:rgb(0,0,0);
+    stroke:rgba(87,87,87,.2);
   }
 
   path.rr_foreground {
     fill:none;
     stroke-dasharray:4,4;
-    stroke:rgb(0,144,174);
+    stroke:rgba(200,200,200,.2);
   }
 
   path.road1 {
     fill:none;
-    stroke:rgb(0,144,174);
+    stroke:rgba(200,200,200,.2);
   }
 
   path.road1_foregr {
     fill:none;
-    stroke:rgb(0,0,0);
+    stroke:rgba(87,87,87,.2);
   }
+
   </style>
 </head>
 <body>
@@ -60,48 +62,103 @@
 
       this.configure = function (config) {
         this.config = typeof config !== 'undefined' ? config : {};
-        //this.config.placeholder = typeof this.config.placeholder !== 'undefined' ? this.config.placeholder : 'body';
         this.config.width = typeof this.config.width !== 'undefined' ? this.config.width : window.innerWidth;
         this.config.height = typeof this.config.height !== 'undefined' ? this.config.height : this.config.width * 1.2;
-        this.config.map = typeof this.config.map !== 'undefined' ? this.config.map : "https://sobach.github.io/msk_bomb_hoax/map3.topojson";
       }
 
       this.render = function () {
         var that = this;
-        var projection = d3.geo.mercator();
-        var path = d3.geo.path().projection(projection);
+        that.projection = d3.geo.mercator();
+        that.projection.scale(1).translate([0, 0]);
+        var path = d3.geo.path().projection(that.projection);
         var plot = d3.select("div#map").append("svg")
           .attr("width", that.config.width)
           .attr("height", that.config.height);
 
-        var g = plot.append("g")
+        that.g = plot.append("g")
           .attr("id", "map");
 
-        d3.json(that.config.map, function(error, map) {
+        d3.json("https://sobach.github.io/msk_bomb_hoax/map3.topojson", function(error, map) {
           if (error) return console.error(error);
           var boundaries = topojson.feature(map, map.objects.boundaries);
-
-          projection.scale(1).translate([0, 0]);
 
           var b = path.bounds(boundaries),
             s = that.config.width / (b[1][0] - b[0][0]),
             t = [(that.config.width - s * (b[1][0] + b[0][0])) / 2 - 150, (that.config.height - s * (b[1][1] + b[0][1])) / 2 + 100];
-          projection.scale(s).translate(t);
-          g.append("path").datum(boundaries).attr("d", path).classed("area", true).style("z-index", 2);
-          g.append("path").datum(topojson.mesh(map, map.objects.water)).attr("d", path).classed("water", true).style("z-index", 2);
-          //g.append("path").datum(topojson.mesh(map, map.objects.water2)).attr("d", path).classed("water", true).style("z-index", 2);
-          g.append("path").datum(topojson.mesh(map, map.objects.railroad)).attr("d", path).classed("rr_background", true).classed("width_oneandhalf", true).style("z-index", 2);
-          g.append("path").datum(topojson.mesh(map, map.objects.railroad2)).attr("d", path).classed("rr_background", true).classed("width_oneandhalf", true).style("z-index", 2);
-          g.append("path").datum(topojson.mesh(map, map.objects.railroad)).attr("d", path).classed("rr_foreground", true).classed("width_one", true).style("z-index", 2);
-          g.append("path").datum(topojson.mesh(map, map.objects.railroad2)).attr("d", path).classed("rr_foreground", true).classed("width_one", true).style("z-index", 2);
-          g.append("path").datum(topojson.mesh(map, map.objects.road21)).attr("d", path).classed("road1", true).classed("width_two", true).style("z-index", 2);
-          g.append("path").datum(topojson.mesh(map, map.objects.road21)).attr("d", path).classed("road1_foregr", true).classed("width_oneandhalf", true).style("z-index", 2);
-          g.append("path").datum(topojson.mesh(map, map.objects.road1)).attr("d", path).classed("road1", true).classed("width_two", true).style("z-index", 2);
-          g.append("path").datum(topojson.mesh(map, map.objects.road1)).attr("d", path).classed("road1_foregr", true).classed("width_oneandhalf", true).style("z-index", 2);
-        }); 
-      }
+          that.projection.scale(s).translate(t);
+          that.g.append("path").datum(boundaries).attr("d", path).classed("area", true).style("z-index", 2);
+          that.g.append("path").datum(topojson.mesh(map, map.objects.water)).attr("d", path).classed("water", true).style("z-index", 2);
+          that.g.append("path").datum(topojson.mesh(map, map.objects.railroad)).attr("d", path).classed("rr_background", true).classed("width_oneandhalf", true).style("z-index", 2);
+          that.g.append("path").datum(topojson.mesh(map, map.objects.railroad2)).attr("d", path).classed("rr_background", true).classed("width_oneandhalf", true).style("z-index", 2);
+          that.g.append("path").datum(topojson.mesh(map, map.objects.railroad)).attr("d", path).classed("rr_foreground", true).classed("width_one", true).style("z-index", 2);
+          that.g.append("path").datum(topojson.mesh(map, map.objects.railroad2)).attr("d", path).classed("rr_foreground", true).classed("width_one", true).style("z-index", 2);
+          that.g.append("path").datum(topojson.mesh(map, map.objects.road21)).attr("d", path).classed("road1", true).classed("width_two", true).style("z-index", 2);
+          that.g.append("path").datum(topojson.mesh(map, map.objects.road21)).attr("d", path).classed("road1_foregr", true).classed("width_oneandhalf", true).style("z-index", 2);
+          that.g.append("path").datum(topojson.mesh(map, map.objects.road1)).attr("d", path).classed("road1", true).classed("width_two", true).style("z-index", 2);
+          that.g.append("path").datum(topojson.mesh(map, map.objects.road1)).attr("d", path).classed("road1_foregr", true).classed("width_oneandhalf", true).style("z-index", 2);
+        });
+
+        d3.csv("https://sobach.github.io/msk_bomb_hoax/pois.csv", function(error, pois) {
+          if (error) throw error;
+          that.pois = pois;
+        });
+
+        d3.csv("https://sobach.github.io/msk_bomb_hoax/outliers.csv", function(error, outliers) {
+            if (error) throw error;
+            that.outliers = outliers.map(function(item){
+              var coord = that.projection([parseFloat(item.lon_c), parseFloat(item.lat_c)]); 
+              item.x = coord[0];
+              item.y = coord[1];
+              item.actual = parseFloat(item.actual);
+              item.diff = parseFloat(item.diff);
+              if(item.diff > 5){
+                item.diff = 5;
+              };
+              return item;
+            });
+            that.size = d3.scale.log()
+              .domain([d3.min(outliers, function(d){ return d.actual }), d3.max(outliers, function(d){ return d.actual })])
+              .range([1, 5]);
+
+            that.color = d3.scale.linear()
+              .domain([5, 1.5, 0, -1.5, -5])
+              .range(["#EC6839", "#F08159" , "#FFCE44", "#71C9BC", "#009982"]);
+          });
+       }
+
+      this.draw_data = function(date){
+        var that = this;
+        var current_pois = that.pois.filter(function(d){ return d.date == date }),
+            current_outliers = that.outliers.filter(function(d){ return d.date == date});
+
+        var circle = that.g.selectAll("circle").data(current_outliers),
+            image = that.g.selectAll("image").data(current_pois);
+
+        circle.exit().remove();
+        image.exit().remove();
+
+        circle.enter().append("circle");
+        image.enter().append("image")
+          .attr("width", "30px")
+          .attr("height", "30px")
+          .attr("xlink:href", "bomb.svg")
+          .append("title");
+
+        circle.transition().duration(500)
+          .attr("cx", function (d) { return d.x; })
+          .attr("cy", function (d) { return d.y; })
+          .attr("r", function(d) { return that.size(d.actual)})
+          .attr("fill", function(d){ return that.color(d.diff)})
+
+        image.transition().duration(500)
+          .attr("x", function (d) { return that.projection([d.lat, d.long])[0] - 15; })
+          .attr("y", function (d) { return that.projection([d.lat, d.long])[1] - 15; })
+          .select("title")
+            .text(function(d){ return d.place+"\nБыла ли эвакуация: "+d.evak1+"\nЭвакуировано: "+d.evak2; });           
+      };
 
       this.configure(config);
+      this.render();
     }
 
 
@@ -113,13 +170,20 @@
       scale:"day"
     }
     
+    
     timeline = new TL.Timeline('timeline-embed',
       'https://docs.google.com/spreadsheets/d/1WDReAlPQmqD2c-ZaFRZ3cHv2u4JXSYa8lBDZA7FG2gw/pubhtml',
       additionalOptions
     );
-
+    
     map = new Map({placeholder:"div#map"});
-    map.render();
+
+    timeline.on("change", function() {
+        tl = this;
+        d = tl.getDataById(tl.current_id).start_date.data;
+        date = typeof d !== 'undefined' ? `${d.year.padStart(4, "0")}-${d.month.padStart(2, "0")}-${d.day.padStart(2, "0")}` : "0000-00-00";
+        map.draw_data(date);
+    });
   </script>
 </body>
 </html>
